@@ -369,9 +369,6 @@ export default function Home() {
             <Link href="/blog" className="rounded-full px-4 py-2 text-sm font-semibold text-[color:var(--muted)] transition hover:bg-white/10 hover:text-[color:var(--fg)]">
               Blog
             </Link>
-            <Link href="/admin" className="rounded-full px-4 py-2 text-sm font-semibold text-[color:var(--muted)] transition hover:bg-white/10 hover:text-[color:var(--fg)]">
-              Admin
-            </Link>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setLight((value) => !value)} className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10 transition hover:border-gold" aria-label="Toggle dark and light mode">
@@ -392,9 +389,6 @@ export default function Home() {
             ))}
             <Link href="/blog" onClick={() => setMenuOpen(false)} className="block rounded-2xl px-4 py-3 font-semibold text-[color:var(--muted)]">
               Blog
-            </Link>
-            <Link href="/admin" onClick={() => setMenuOpen(false)} className="block rounded-2xl px-4 py-3 font-semibold text-[color:var(--muted)]">
-              Admin
             </Link>
           </div>
         ) : null}
@@ -627,7 +621,7 @@ export default function Home() {
           <SectionTitle eyebrow="Extra Systems" title="A future-ready client portal concept built into the brand story." />
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Admin Dashboard", ClipboardList, "Track requests, clients, invoices, files, and project status from one clean workspace."],
+              ["Client Project Tracking", ClipboardList, "Track request IDs, milestones, expected delivery stages, and follow-up actions from one clean workflow."],
               ["File Upload System", Upload, "Collect documents, images, project chapters, CV details, and references securely."],
               ["Payment Integration", CreditCard, "Prepare orders for deposits, balances, invoices, and service receipts."],
               ["AI Chatbot Assistant", Bot, "Guide visitors, answer service questions, and recommend the right package."]
