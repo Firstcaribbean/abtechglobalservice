@@ -706,7 +706,7 @@ export default function Home() {
                 <p className="flex gap-3"><MapPin className="shrink-0 text-gold" /> Opp Federal Polytechnic Bida, Niger State</p>
                 <p className="flex gap-3"><Mail className="shrink-0 text-gold" /> abtechglobalservice@gmail.com</p>
                 <p className="flex gap-3"><Globe2 className="shrink-0 text-gold" /> abtechglobalservice.vercel.app</p>
-                <p className="flex gap-3"><Phone className="shrink-0 text-gold" /> +2347062279160, +2349079354758</p>
+                <p className="flex gap-3"><Phone className="shrink-0 text-gold" /> WhatsApp: +2349079354758 | Support: +2347062279160</p>
               </div>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-3xl border border-white/15 bg-white/10 p-5">
@@ -802,7 +802,7 @@ export default function Home() {
         <Bot size={26} />
       </button>
 
-      <a href="https://wa.me/2347062279160" target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-50 grid h-16 w-16 place-items-center rounded-full bg-[#25D366] text-white shadow-2xl transition hover:-translate-y-1" aria-label="Chat on WhatsApp">
+      <a href="https://wa.me/2349079354758" target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-50 grid h-16 w-16 place-items-center rounded-full bg-[#25D366] text-white shadow-2xl transition hover:-translate-y-1" aria-label="Chat on WhatsApp">
         <MessageCircle size={30} />
       </a>
     </main>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Bell,
@@ -21,6 +21,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   Users,
   X
 } from "lucide-react";
@@ -38,6 +39,24 @@ type ClientRequest = {
   due: string;
   paid: string;
   notes: string;
+};
+
+type AdminProfile = {
+  businessName: string;
+  adminName: string;
+  email: string;
+  whatsapp: string;
+  address: string;
+  website: string;
+};
+
+const defaultProfile: AdminProfile = {
+  businessName: "AB TECH GLOBAL SERVICE",
+  adminName: "AB TECH Admin",
+  email: "abtechglobalservice@gmail.com",
+  whatsapp: "+2349079354758",
+  address: "Opp Federal Polytechnic Bida, Niger State",
+  website: "abtechglobalservice.vercel.app"
 };
 
 const initialRequests: ClientRequest[] = [
@@ -109,12 +128,35 @@ const contentManagers = [
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>("Dashboard");
   const [requests, setRequests] = useState(initialRequests);
+  const [profile, setProfile] = useState<AdminProfile>(defaultProfile);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | RequestStatus>("All");
   const [selectedRequest, setSelectedRequest] = useState<ClientRequest | null>(null);
   const [managerPanel, setManagerPanel] = useState<string | null>(null);
   const [notice, setNotice] = useState("Admin dashboard ready. No urgent system alerts.");
   const [draftTitle, setDraftTitle] = useState("");
+  const [draftDescription, setDraftDescription] = useState("");
+
+  useEffect(() => {
+    const savedProfile = window.localStorage.getItem("abtech-admin-profile");
+    const savedRequests = window.localStorage.getItem("abtech-admin-requests");
+
+    if (savedProfile) {
+      setProfile({ ...defaultProfile, ...JSON.parse(savedProfile) });
+    }
+
+    if (savedRequests) {
+      setRequests(JSON.parse(savedRequests));
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("abtech-admin-profile", JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    window.localStorage.setItem("abtech-admin-requests", JSON.stringify(requests));
+  }, [requests]);
 
   const filteredRequests = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -169,8 +211,21 @@ export default function AdminPage() {
     const label = draftTitle.trim() || "Untitled update";
     setNotice(`${managerPanel ?? "Content"} saved: ${label}.`);
     setDraftTitle("");
+    setDraftDescription("");
     setManagerPanel(null);
   }
+
+  function saveProfile() {
+    setNotice("Admin and business details saved on this device.");
+  }
+
+  function resetWorkspace() {
+    setRequests(initialRequests);
+    setProfile(defaultProfile);
+    setNotice("Admin workspace reset to default demo data.");
+  }
+
+  const whatsappUrl = `https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`;
 
   return (
     <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--fg)]">
@@ -217,7 +272,7 @@ export default function AdminPage() {
               <button onClick={addQuickRequest} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-3 font-bold">
                 <Plus size={18} /> New Request
               </button>
-              <a href="https://wa.me/2347062279160" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 font-black text-navy">
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 font-black text-navy">
                 <MessageCircle size={18} /> WhatsApp
               </a>
             </div>
@@ -338,6 +393,70 @@ export default function AdminPage() {
             </section>
           )}
 
+          {activeSection === "Clients" && (
+            <section className="mt-6 grid gap-5 lg:grid-cols-3">
+              {requests.map((request) => (
+                <article key={request.id} className="glass rounded-3xl p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-xl font-black">{request.client}</h3>
+                      <p className="mt-1 text-sm text-[color:var(--muted)]">{request.phone}</p>
+                    </div>
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-gold">{request.id}</span>
+                  </div>
+                  <p className="mt-5 font-bold">{request.service}</p>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{request.notes}</p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button onClick={() => setSelectedRequest(request)} className="rounded-full bg-gold px-4 py-2 text-sm font-black text-navy">View profile</button>
+                    <a href={`https://wa.me/${request.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black">Message</a>
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
+
+          {activeSection === "Payments" && (
+            <section className="mt-6 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+              <div className="glass rounded-3xl p-6">
+                <h2 className="text-2xl font-black">Payment Actions</h2>
+                <div className="mt-5 space-y-3">
+                  {["Create invoice", "Mark payment confirmed", "Send payment reminder", "Export payment report"].map((action) => (
+                    <button key={action} onClick={() => setNotice(`${action} action prepared.`)} className="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/8 px-4 py-3 text-left font-bold transition hover:border-gold">
+                      {action}
+                      <CreditCard size={18} className="text-gold" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="glass rounded-3xl p-6">
+                <h2 className="text-2xl font-black">Invoice Queue</h2>
+                <div className="mt-5 divide-y divide-white/10">
+                  {requests.map((request) => (
+                    <div key={request.id} className="grid gap-2 py-4 sm:grid-cols-4 sm:items-center">
+                      <p className="font-black text-gold">{request.id}</p>
+                      <p className="font-bold">{request.client}</p>
+                      <p className="text-sm text-[color:var(--muted)]">{request.paid}</p>
+                      <button onClick={() => setNotice(`Invoice opened for ${request.client}.`)} className="rounded-full bg-white/10 px-3 py-2 text-sm font-black">Open</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeSection === "Files" && (
+            <section className="mt-6 grid gap-5 lg:grid-cols-3">
+              {["Project chapters.zip", "Brand assets folder", "Seminar slides.pptx", "Website images pack"].map((file, index) => (
+                <article key={file} className="glass rounded-3xl p-6">
+                  <FileArchive className="text-gold" />
+                  <h3 className="mt-5 text-xl font-black">{file}</h3>
+                  <p className="mt-2 text-sm text-[color:var(--muted)]">Uploaded file group #{index + 1}</p>
+                  <button onClick={() => setNotice(`${file} selected for review.`)} className="mt-5 rounded-full border border-white/15 bg-white/10 px-4 py-2 font-black">Review file</button>
+                </article>
+              ))}
+            </section>
+          )}
+
           {(activeSection === "Dashboard" || activeSection === "Website Content" || activeSection === "Settings") && (
             <section className="mt-6 grid gap-6 lg:grid-cols-3">
               {contentManagers.map(([title, copy]) => (
@@ -350,6 +469,48 @@ export default function AdminPage() {
                   </button>
                 </article>
               ))}
+            </section>
+          )}
+
+          {activeSection === "Settings" && (
+            <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  saveProfile();
+                }}
+                className="glass rounded-3xl p-6"
+              >
+                <div className="flex items-center gap-3">
+                  <SlidersHorizontal className="text-gold" />
+                  <h2 className="text-2xl font-black">Admin & Contact Details</h2>
+                </div>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <AdminInput label="Business name" value={profile.businessName} onChange={(value) => setProfile((current) => ({ ...current, businessName: value }))} />
+                  <AdminInput label="Admin name" value={profile.adminName} onChange={(value) => setProfile((current) => ({ ...current, adminName: value }))} />
+                  <AdminInput label="Admin email" value={profile.email} onChange={(value) => setProfile((current) => ({ ...current, email: value }))} />
+                  <AdminInput label="WhatsApp number" value={profile.whatsapp} onChange={(value) => setProfile((current) => ({ ...current, whatsapp: value }))} />
+                  <AdminInput label="Address" value={profile.address} onChange={(value) => setProfile((current) => ({ ...current, address: value }))} />
+                  <AdminInput label="Website" value={profile.website} onChange={(value) => setProfile((current) => ({ ...current, website: value }))} />
+                </div>
+                <button className="mt-5 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3 font-black text-navy">
+                  <Save size={18} /> Save details
+                </button>
+              </form>
+              <div className="glass rounded-3xl p-6">
+                <h2 className="text-2xl font-black">Live Admin Preview</h2>
+                <div className="mt-5 space-y-4 text-sm leading-7 text-[color:var(--muted)]">
+                  <p><strong className="text-[color:var(--fg)]">Business:</strong> {profile.businessName}</p>
+                  <p><strong className="text-[color:var(--fg)]">Admin:</strong> {profile.adminName}</p>
+                  <p><strong className="text-[color:var(--fg)]">Email:</strong> {profile.email}</p>
+                  <p><strong className="text-[color:var(--fg)]">WhatsApp:</strong> {profile.whatsapp}</p>
+                  <p><strong className="text-[color:var(--fg)]">Address:</strong> {profile.address}</p>
+                </div>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 font-black text-white">
+                  Test WhatsApp link <MessageCircle size={18} />
+                </a>
+                <button onClick={resetWorkspace} className="ml-3 mt-5 rounded-full border border-white/15 bg-white/10 px-5 py-3 font-black">Reset demo data</button>
+              </div>
             </section>
           )}
         </section>
@@ -408,7 +569,7 @@ export default function AdminPage() {
               <span className="text-sm font-bold text-[color:var(--muted)]">Title or item name</span>
               <input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} placeholder="Enter update title" className="mt-2 w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 outline-none focus:border-gold" />
             </label>
-            <textarea placeholder="Internal description or content notes" rows={5} className="mt-4 w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 outline-none focus:border-gold" />
+            <textarea value={draftDescription} onChange={(event) => setDraftDescription(event.target.value)} placeholder="Internal description or content notes" rows={5} className="mt-4 w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 outline-none focus:border-gold" />
             <button onClick={saveManagerDraft} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold px-5 py-3 font-black text-navy">
               <Save size={18} /> Save update
             </button>
@@ -425,5 +586,14 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="text-sm font-bold text-[color:var(--muted)]">{label}</p>
       <p className="mt-2 font-black">{value}</p>
     </div>
+  );
+}
+
+function AdminInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-bold text-[color:var(--muted)]">{label}</span>
+      <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 outline-none focus:border-gold" />
+    </label>
   );
 }

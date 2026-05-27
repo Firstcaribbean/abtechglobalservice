@@ -41,6 +41,6 @@ export async function POST(request: NextRequest) {
     status: "Request received",
     nextStep: "AB TECH will review the details and contact you on WhatsApp.",
     fileName: payload.fileName,
-    whatsappUrl: `https://wa.me/2347062279160?text=${whatsappText}`
+    whatsappUrl: `https://wa.me/2349079354758?text=${whatsappText}`
   });
 }
