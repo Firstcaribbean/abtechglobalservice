@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   Bell,
@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sun,
+  Upload,
   Users,
   X
 } from "lucide-react";
@@ -59,6 +60,9 @@ type AdminFile = {
   size: string;
   status: "Pending review" | "Approved" | "Needs correction";
   notes: string;
+  mime?: string;
+  previewUrl?: string;
+  textPreview?: string;
 };
 
 const defaultProfile: AdminProfile = {
@@ -172,6 +176,7 @@ const initialFiles: AdminFile[] = [
 ];
 
 export default function AdminPage() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>("Dashboard");
   const [requests, setRequests] = useState(initialRequests);
   const [files, setFiles] = useState(initialFiles);
@@ -298,6 +303,62 @@ export default function AdminPage() {
     setFiles((current) => current.map((file) => (file.name === name ? { ...file, status } : file)));
     setSelectedFile((file) => (file?.name === name ? { ...file, status } : file));
     setNotice(`${name} marked as ${status.toLowerCase()}.`);
+  }
+
+  function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const uploadedFile: AdminFile = {
+      name: file.name,
+      owner: profile.adminName,
+      type: file.type || "Unknown file type",
+      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      status: "Pending review",
+      notes: "Uploaded from the admin file review center.",
+      mime: file.type,
+      previewUrl: URL.createObjectURL(file)
+    };
+
+    if (file.type.startsWith("text/") || file.name.endsWith(".txt") || file.name.endsWith(".csv")) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result ?? "").slice(0, 3000);
+        setFiles((current) => [{ ...uploadedFile, textPreview: text }, ...current]);
+        setSelectedFile({ ...uploadedFile, textPreview: text });
+      };
+      reader.readAsText(file);
+    } else {
+      setFiles((current) => [uploadedFile, ...current]);
+      setSelectedFile(uploadedFile);
+    }
+
+    setNotice(`${file.name} uploaded for review.`);
+    event.target.value = "";
+  }
+
+  function renderFilePreview(file: AdminFile) {
+    if (file.previewUrl && file.mime?.startsWith("image/")) {
+      return <img src={file.previewUrl} alt={`${file.name} preview`} className="h-full max-h-72 w-full rounded-2xl object-contain" />;
+    }
+
+    if (file.previewUrl && file.mime === "application/pdf") {
+      return <iframe title={`${file.name} preview`} src={file.previewUrl} className="h-72 w-full rounded-2xl border border-white/15" />;
+    }
+
+    if (file.textPreview) {
+      return <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-2xl bg-black/30 p-4 text-left text-xs leading-6 text-white">{file.textPreview}</pre>;
+    }
+
+    return (
+      <div className="text-center">
+        <FileArchive className="mx-auto text-gold" size={44} />
+        <p className="mt-4 font-black">{file.previewUrl ? "Preview not supported for this file type" : "Preview unavailable for sample file"}</p>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">
+          {file.previewUrl ? "Use Open file to view or download it." : "Click Add upload to attach a real file from this device."}
+        </p>
+      </div>
+    );
   }
 
   const whatsappUrl = `https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`;
@@ -530,9 +591,12 @@ export default function AdminPage() {
                     <h2 className="text-2xl font-black">File Review Center</h2>
                     <p className="mt-2 text-sm text-[color:var(--muted)]">Open uploaded client files, inspect notes, approve assets, or mark corrections.</p>
                   </div>
-                  <button onClick={() => setNotice("Upload placeholder ready. Connect storage to accept real files.")} className="rounded-full bg-gold px-5 py-3 font-black text-navy">
-                    Add upload
-                  </button>
+                  <div>
+                    <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3 font-black text-navy">
+                      <Upload size={18} /> Add upload
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
                   {files.map((file) => (
@@ -663,12 +727,8 @@ export default function AdminPage() {
 
             <div className="mt-6 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-3xl border border-white/15 bg-white/8 p-5">
-                <div className="grid h-56 place-items-center rounded-2xl border border-dashed border-gold/50 bg-gold/10">
-                  <div className="text-center">
-                    <FileArchive className="mx-auto text-gold" size={44} />
-                    <p className="mt-4 font-black">Preview unavailable for demo file</p>
-                    <p className="mt-2 text-sm text-[color:var(--muted)]">Connect Vercel Blob or another storage service to preview uploaded files.</p>
-                  </div>
+                <div className="grid min-h-56 place-items-center rounded-2xl border border-dashed border-gold/50 bg-gold/10 p-4">
+                  {renderFilePreview(selectedFile)}
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <Info label="Owner" value={selectedFile.owner} />
@@ -703,6 +763,11 @@ export default function AdminPage() {
                 <button onClick={() => setNotice(`${selectedFile.name} review saved.`)} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold px-5 py-3 font-black text-navy">
                   <Save size={18} /> Save review
                 </button>
+                {selectedFile.previewUrl ? (
+                  <a href={selectedFile.previewUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 px-5 py-3 font-black">
+                    Open file
+                  </a>
+                ) : null}
               </div>
             </div>
           </section>
