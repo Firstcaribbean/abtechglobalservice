@@ -15,6 +15,7 @@ import {
   Inbox,
   LayoutDashboard,
   MessageCircle,
+  Moon,
   Palette,
   Plus,
   Save,
@@ -22,6 +23,7 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Sun,
   Users,
   X
 } from "lucide-react";
@@ -48,6 +50,15 @@ type AdminProfile = {
   whatsapp: string;
   address: string;
   website: string;
+};
+
+type AdminFile = {
+  name: string;
+  owner: string;
+  type: string;
+  size: string;
+  status: "Pending review" | "Approved" | "Needs correction";
+  notes: string;
 };
 
 const defaultProfile: AdminProfile = {
@@ -125,13 +136,51 @@ const contentManagers = [
   ["Service Pricing", "Organize service packages, turnaround times, and internal payment notes."]
 ];
 
+const initialFiles: AdminFile[] = [
+  {
+    name: "Project chapters.zip",
+    owner: "Aisha M.",
+    type: "Academic document pack",
+    size: "18.4 MB",
+    status: "Pending review",
+    notes: "Contains chapters one to five, references, and tables for formatting."
+  },
+  {
+    name: "Brand assets folder",
+    owner: "Daniel O.",
+    type: "Brand identity assets",
+    size: "42.1 MB",
+    status: "Approved",
+    notes: "Logo samples, letterhead draft, colors, and business details."
+  },
+  {
+    name: "Seminar slides.pptx",
+    owner: "Maryam S.",
+    type: "Presentation file",
+    size: "9.7 MB",
+    status: "Needs correction",
+    notes: "Needs final spelling pass and replacement of two low-resolution images."
+  },
+  {
+    name: "Website images pack",
+    owner: "Ibrahim K.",
+    type: "Website media",
+    size: "25.6 MB",
+    status: "Pending review",
+    notes: "Hero image options, service graphics, and portfolio screenshots."
+  }
+];
+
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>("Dashboard");
   const [requests, setRequests] = useState(initialRequests);
+  const [files, setFiles] = useState(initialFiles);
   const [profile, setProfile] = useState<AdminProfile>(defaultProfile);
+  const [light, setLight] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | RequestStatus>("All");
   const [selectedRequest, setSelectedRequest] = useState<ClientRequest | null>(null);
+  const [selectedFile, setSelectedFile] = useState<AdminFile | null>(null);
   const [managerPanel, setManagerPanel] = useState<string | null>(null);
   const [notice, setNotice] = useState("Admin dashboard ready. No urgent system alerts.");
   const [draftTitle, setDraftTitle] = useState("");
@@ -140,6 +189,8 @@ export default function AdminPage() {
   useEffect(() => {
     const savedProfile = window.localStorage.getItem("abtech-admin-profile");
     const savedRequests = window.localStorage.getItem("abtech-admin-requests");
+    const savedFiles = window.localStorage.getItem("abtech-admin-files");
+    const savedTheme = window.localStorage.getItem("abtech-admin-theme");
 
     if (savedProfile) {
       setProfile({ ...defaultProfile, ...JSON.parse(savedProfile) });
@@ -148,7 +199,20 @@ export default function AdminPage() {
     if (savedRequests) {
       setRequests(JSON.parse(savedRequests));
     }
+
+    if (savedFiles) {
+      setFiles(JSON.parse(savedFiles));
+    }
+
+    if (savedTheme === "light") {
+      setLight(true);
+    }
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("light", light);
+    window.localStorage.setItem("abtech-admin-theme", light ? "light" : "dark");
+  }, [light]);
 
   useEffect(() => {
     window.localStorage.setItem("abtech-admin-profile", JSON.stringify(profile));
@@ -157,6 +221,10 @@ export default function AdminPage() {
   useEffect(() => {
     window.localStorage.setItem("abtech-admin-requests", JSON.stringify(requests));
   }, [requests]);
+
+  useEffect(() => {
+    window.localStorage.setItem("abtech-admin-files", JSON.stringify(files));
+  }, [files]);
 
   const filteredRequests = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -221,8 +289,15 @@ export default function AdminPage() {
 
   function resetWorkspace() {
     setRequests(initialRequests);
+    setFiles(initialFiles);
     setProfile(defaultProfile);
     setNotice("Admin workspace reset to default demo data.");
+  }
+
+  function updateFileStatus(name: string, status: AdminFile["status"]) {
+    setFiles((current) => current.map((file) => (file.name === name ? { ...file, status } : file)));
+    setSelectedFile((file) => (file?.name === name ? { ...file, status } : file));
+    setNotice(`${name} marked as ${status.toLowerCase()}.`);
   }
 
   const whatsappUrl = `https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`;
@@ -266,6 +341,9 @@ export default function AdminPage() {
               <p className="mt-2 text-[color:var(--muted)]">{notice}</p>
             </div>
             <div className="flex flex-wrap gap-3">
+              <button onClick={() => setLight((value) => !value)} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-3 font-bold" aria-label="Toggle admin theme">
+                {light ? <Moon size={18} /> : <Sun size={18} />} {light ? "Dark" : "Light"}
+              </button>
               <button onClick={() => setNotice("Alerts checked. No failed requests or payment warnings.")} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-3 font-bold">
                 <Bell size={18} /> Alerts
               </button>
@@ -291,7 +369,7 @@ export default function AdminPage() {
             ))}
           </section>
 
-          {(activeSection === "Dashboard" || activeSection === "Requests" || activeSection === "Clients" || activeSection === "Projects") && (
+          {(activeSection === "Dashboard" || activeSection === "Requests") && (
             <div className="mt-6 grid gap-6 xl:grid-cols-[1.45fr_0.85fr]">
               <section className="glass overflow-hidden rounded-3xl">
                 <div className="flex flex-col gap-4 border-b border-white/10 p-5 xl:flex-row xl:items-center xl:justify-between">
@@ -376,7 +454,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {(activeSection === "Dashboard" || activeSection === "Projects" || activeSection === "Files") && (
+          {(activeSection === "Dashboard" || activeSection === "Projects") && (
             <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               {[
                 ["Website projects", "4 active", Globe2],
@@ -445,19 +523,35 @@ export default function AdminPage() {
           )}
 
           {activeSection === "Files" && (
-            <section className="mt-6 grid gap-5 lg:grid-cols-3">
-              {["Project chapters.zip", "Brand assets folder", "Seminar slides.pptx", "Website images pack"].map((file, index) => (
-                <article key={file} className="glass rounded-3xl p-6">
+            <section className="mt-6">
+              <div className="glass rounded-3xl p-6">
+                <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-5 md:flex-row md:items-center">
+                  <div>
+                    <h2 className="text-2xl font-black">File Review Center</h2>
+                    <p className="mt-2 text-sm text-[color:var(--muted)]">Open uploaded client files, inspect notes, approve assets, or mark corrections.</p>
+                  </div>
+                  <button onClick={() => setNotice("Upload placeholder ready. Connect storage to accept real files.")} className="rounded-full bg-gold px-5 py-3 font-black text-navy">
+                    Add upload
+                  </button>
+                </div>
+                <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                  {files.map((file) => (
+                    <article key={file.name} className="rounded-3xl border border-white/15 bg-white/8 p-6">
                   <FileArchive className="text-gold" />
-                  <h3 className="mt-5 text-xl font-black">{file}</h3>
-                  <p className="mt-2 text-sm text-[color:var(--muted)]">Uploaded file group #{index + 1}</p>
-                  <button onClick={() => setNotice(`${file} selected for review.`)} className="mt-5 rounded-full border border-white/15 bg-white/10 px-4 py-2 font-black">Review file</button>
-                </article>
-              ))}
+                      <h3 className="mt-5 text-xl font-black">{file.name}</h3>
+                      <p className="mt-2 text-sm text-[color:var(--muted)]">{file.owner} - {file.size}</p>
+                      <span className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-black ${file.status === "Approved" ? "bg-emerald-400/20 text-emerald-200" : file.status === "Needs correction" ? "bg-red-400/20 text-red-200" : "bg-gold/20 text-gold"}`}>
+                        {file.status}
+                      </span>
+                      <button onClick={() => setSelectedFile(file)} className="mt-5 block rounded-full border border-white/15 bg-white/10 px-4 py-2 font-black transition hover:border-gold">Review file</button>
+                    </article>
+                  ))}
+                </div>
+              </div>
             </section>
           )}
 
-          {(activeSection === "Dashboard" || activeSection === "Website Content" || activeSection === "Settings") && (
+          {(activeSection === "Dashboard" || activeSection === "Website Content") && (
             <section className="mt-6 grid gap-6 lg:grid-cols-3">
               {contentManagers.map(([title, copy]) => (
                 <article key={title} className="glass rounded-3xl p-6">
@@ -549,6 +643,68 @@ export default function AdminPage() {
             <a href={`https://wa.me/${selectedRequest.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 font-black text-white">
               Contact client <MessageCircle size={18} />
             </a>
+          </section>
+        </div>
+      ) : null}
+
+      {selectedFile ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4 backdrop-blur-md">
+          <section className="glass max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.24em] text-gold">File Review</p>
+                <h2 className="mt-2 text-3xl font-black">{selectedFile.name}</h2>
+                <p className="mt-2 text-sm text-[color:var(--muted)]">{selectedFile.owner} - {selectedFile.type}</p>
+              </div>
+              <button onClick={() => setSelectedFile(null)} className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10" aria-label="Close file review">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-3xl border border-white/15 bg-white/8 p-5">
+                <div className="grid h-56 place-items-center rounded-2xl border border-dashed border-gold/50 bg-gold/10">
+                  <div className="text-center">
+                    <FileArchive className="mx-auto text-gold" size={44} />
+                    <p className="mt-4 font-black">Preview unavailable for demo file</p>
+                    <p className="mt-2 text-sm text-[color:var(--muted)]">Connect Vercel Blob or another storage service to preview uploaded files.</p>
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <Info label="Owner" value={selectedFile.owner} />
+                  <Info label="Size" value={selectedFile.size} />
+                  <Info label="Type" value={selectedFile.type} />
+                  <Info label="Status" value={selectedFile.status} />
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/15 bg-white/8 p-5">
+                <h3 className="text-xl font-black">Review Checklist</h3>
+                <div className="mt-4 space-y-3">
+                  {["File opens correctly", "Content matches request", "Images/documents are usable", "Ready for delivery or correction"].map((item) => (
+                    <label key={item} className="flex items-center gap-3 rounded-2xl bg-white/8 p-3 text-sm font-bold">
+                      <input type="checkbox" className="h-4 w-4 accent-gold" />
+                      {item}
+                    </label>
+                  ))}
+                </div>
+                <label className="mt-5 block">
+                  <span className="text-sm font-bold text-[color:var(--muted)]">Review decision</span>
+                  <select value={selectedFile.status} onChange={(event) => updateFileStatus(selectedFile.name, event.target.value as AdminFile["status"])} className="mt-2 w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 font-bold outline-none">
+                    <option>Pending review</option>
+                    <option>Approved</option>
+                    <option>Needs correction</option>
+                  </select>
+                </label>
+                <div className="mt-5 rounded-2xl border border-white/15 bg-white/8 p-4">
+                  <p className="text-sm font-bold text-[color:var(--muted)]">File notes</p>
+                  <p className="mt-2 leading-7">{selectedFile.notes}</p>
+                </div>
+                <button onClick={() => setNotice(`${selectedFile.name} review saved.`)} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold px-5 py-3 font-black text-navy">
+                  <Save size={18} /> Save review
+                </button>
+              </div>
+            </div>
           </section>
         </div>
       ) : null}
